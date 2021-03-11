@@ -2,6 +2,8 @@ from utils import preprocess_sentence
 from tqdm import tqdm
 import pickle
 
+from collections import Counter
+
 class Vocabulary:
     """
     Class to store language vocabulary
@@ -16,6 +18,8 @@ class Vocabulary:
             "<UNK>": 3  # Unknown tocken
         }
         self.idx_2_word = {v: k for k, v in self.word_2_idx.items()}
+        
+        self.word_counter = Counter()
         
     def index_words(self, tokens):
         """
@@ -47,7 +51,10 @@ class Vocabulary:
         with open(file, "r") as input_file:
             for line in tqdm(input_file.readlines()):
                 tockens = preprocess_sentence(line[:-1], language=language)
-                self.index_words(tockens)
+                self.word_counter.update(tockens)
+        
+        for pair in self.word_counter.most_common():
+            self.index_word(pair[0])
     
     @classmethod
     def load(cls, filename):

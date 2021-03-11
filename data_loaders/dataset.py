@@ -27,11 +27,15 @@ class TextDataset(Dataset):
     def __len__(self):
         return len(self.ru)
     
-    def prepare_sequence(self, sequence, voc):
-        prepared = []
+    def prepare_sequence(self, sequence, voc, source=False):
+        # Include starting token
+        if not source:
+            prepared = [voc.word_2_idx["<SOS>"]]
+        else:
+            prepared = []
         for t in sequence:
             # Randomly substitute some tockens with unknown
-            if torch.rand(1)[0] < self.random_sub:
+            if source and torch.rand(1)[0] < self.random_sub:
                 prepared.append(voc.word_2_idx["<UNK>"])
                 
             # Substitute tocken with index
@@ -41,6 +45,9 @@ class TextDataset(Dataset):
             # Substitute missing tocken with index of unknown
             else:
                 prepared.append(voc.word_2_idx["<UNK>"])
+        # Include ending token
+        if not source:
+            prepared.append(voc.word_2_idx["<EOS>"])
         return torch.tensor(prepared, dtype=torch.uint8)
     
     def sort(self):
@@ -52,9 +59,9 @@ class TextDataset(Dataset):
         else:
             pass
     def __getitem__(self, idx):
-        ru_item = self.prepare_sequence(self.ru[idx], self.ru_voc)
+        ru_item = self.prepare_sequence(self.ru[idx], self.ru_voc, source=True)
         if self.en is not None:
-            en_item = self.prepare_sequence(self.en[idx], self.en_voc)
+            en_item = self.prepare_sequence(self.en[idx], self.en_voc, source=False)
             return ru_item, en_item
         
         return ru_item
